@@ -29,9 +29,9 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+    const { useState, useEffect, useMemo, useRef } = React;
 
-    // 依存を減らす：React管理のSVGアイコン
+    // React管理のシンプルSVGアイコン
     const Icon = ({ name, size = 24, className = "", strokeWidth = 2 }) => {
       const common = {
         width: size,
@@ -111,7 +111,6 @@
       { id: 6, text: "おふろに はいる", xp: 50, completed: false, icon: "🛁" },
     ];
 
-    // レベルごとの「成長」表現（称号・枠色・演出）
     const getGrowthProfile = (level) => {
       if (level >= 10) return { title: "でんせつの ゆうしゃ", accent: "from-fuchsia-500 via-yellow-300 to-emerald-400", frame: "border-fuchsia-400/40", glow: "shadow-[0_0_30px_rgba(217,70,239,0.18)]" };
       if (level >= 7)  return { title: "えいゆう",           accent: "from-indigo-500 via-sky-300 to-emerald-400",   frame: "border-indigo-400/35", glow: "shadow-[0_0_26px_rgba(99,102,241,0.16)]" };
@@ -121,35 +120,26 @@
 
     const App = () => {
       const [tasks, setTasks] = useState(INITIAL_TASKS);
+
+      // XPは累積
       const [totalXp, setTotalXp] = useState(0);
-      const [level, setLevel] = useState(1);
+
+      // レベルは「派生値」で確定させる（上がらない問題の根本対策）
+      const level = useMemo(() => Math.floor(totalXp / 200) + 1, [totalXp]);
+      const prevLevelRef = useRef(level);
+
       const [showLevelUp, setShowLevelUp] = useState(false);
 
       const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
       const allComplete = completedCount === tasks.length;
 
-      // 「3レベルごとに豪華」判定
       const isMilestone = level % 3 === 0;
-
       const profile = useMemo(() => getGrowthProfile(level), [level]);
 
-      // 毎レベルで見た目が変わる（成長演出の主軸）
-      // seed に level を入れて顔つき/装備などが変わるようにする
       const avatarUrl = useMemo(() => {
         const seed = `Wake-Lv${level}`;
-        // Dicebear adventurer（SVG）: 背景色なども固定しつつ seed で変化
         return `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4`;
       }, [level]);
-
-      useEffect(() => {
-        const newLevel = Math.floor(totalXp / 200) + 1;
-        if (newLevel > level) {
-          setLevel(newLevel);
-          setShowLevelUp(true);
-          triggerConfetti(true);
-          setTimeout(() => setShowLevelUp(false), 2500);
-        }
-      }, [totalXp, level]);
 
       const triggerConfetti = (big = false) => {
         if (!window.confetti) return;
@@ -160,6 +150,17 @@
           colors: ["#FFD700", "#60A5FA", "#F97316", "#FFFFFF"]
         });
       };
+
+      // レベルアップ演出（prevLevel比較で確実に発火）
+      useEffect(() => {
+        const prev = prevLevelRef.current;
+        if (level > prev) {
+          prevLevelRef.current = level;
+          setShowLevelUp(true);
+          triggerConfetti(true);
+          setTimeout(() => setShowLevelUp(false), 2500);
+        }
+      }, [level]);
 
       const toggleTask = (id) => {
         setTasks(prev =>
@@ -182,15 +183,17 @@
 
       const xpInLevel = totalXp % 200;
       const xpProgress = (xpInLevel / 200) * 100;
-
-      // Lv欄を見やすく：次のレベルまで
       const xpToNext = 200 - xpInLevel;
 
       return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 pb-28 md:p-8 flex justify-center items-start">
+        // ここが重要：下部fixedメニューに隠れないよう余白を大きく取る（safe-areaも）
+        <div
+          className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8 flex justify-center items-start"
+          style={{ paddingBottom: "calc(180px + env(safe-area-inset-bottom))" }}
+        >
           <div className="max-w-md w-full space-y-6">
 
-            {/* ステータス（見やすく強化） */}
+            {/* ステータス */}
             <div className={`bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-6 shadow-2xl border ${profile.frame} relative overflow-hidden ${profile.glow}`}>
               <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-white">
                 <Icon name="sword" size={120} />
@@ -208,7 +211,6 @@
                   <h1 className="text-2xl font-black text-white leading-tight">ゆうしゃ 和敬</h1>
 
                   <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    {/* Lv表示を大型化＋3レベル毎に豪華 */}
                     <div
                       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-black tracking-wide
                         ${isMilestone
@@ -220,7 +222,6 @@
                       <span className="tabular-nums">Lv. {level}</span>
                     </div>
 
-                    {/* 成長称号 */}
                     <div className="text-xs font-black uppercase text-slate-300/90 truncate">
                       {profile.title}
                     </div>
@@ -228,7 +229,6 @@
                 </div>
               </div>
 
-              {/* XPバー（見やすく：現状/残りを明確化） */}
               <div className="space-y-2 relative z-10">
                 <div className="flex justify-between items-end">
                   <div className="text-[11px] font-black uppercase tracking-widest text-slate-300/80">
@@ -251,7 +251,6 @@
                   />
                 </div>
 
-                {/* 全完了時の小さなメッセージ */}
                 {allComplete && (
                   <div className="mt-2 text-xs font-black text-emerald-300">
                     今日のクエスト、ぜんぶクリア！
@@ -289,11 +288,7 @@
                       <div className={`text-lg font-bold truncate ${task.completed ? "line-through text-slate-500" : "text-slate-100"}`}>
                         {task.text}
                       </div>
-                      <div
-                        className={`text-xs font-black mt-1 flex items-center gap-1 ${
-                          task.completed ? "text-slate-600" : "text-yellow-400"
-                        }`}
-                      >
+                      <div className={`text-xs font-black mt-1 flex items-center gap-1 ${task.completed ? "text-slate-600" : "text-yellow-400"}`}>
                         <Icon name="star" size={14} className="inline-block" />
                         <span className="tabular-nums">+{task.xp} XP</span>
                       </div>
@@ -311,10 +306,11 @@
               </div>
             </div>
 
-            {/* クリア報酬：削除（ご要望対応） */}
-
-            {/* 下部メニュー */}
-            <div className="fixed bottom-6 left-4 right-4 max-w-md mx-auto z-40">
+            {/* 下部メニュー（safe-area対応で少し上げる） */}
+            <div
+              className="fixed left-4 right-4 max-w-md mx-auto z-40"
+              style={{ bottom: "calc(16px + env(safe-area-inset-bottom))" }}
+            >
               <div className="bg-slate-900/80 backdrop-blur-xl rounded-[2.5rem] p-4 border border-slate-700/50 flex justify-around">
                 <button className="p-4 bg-blue-600 rounded-2xl text-white">
                   <Icon name="home" size={28} />
@@ -328,7 +324,7 @@
               </div>
             </div>
 
-            {/* レベルアップ（演出：成長が分かるように表示） */}
+            {/* レベルアップ */}
             {showLevelUp && (
               <div className="fixed inset-0 flex items-center justify-center z-50 bg-slate-950/90 backdrop-blur-md">
                 <div className="text-center p-8">
