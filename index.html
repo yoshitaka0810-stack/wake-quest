@@ -1,213 +1,290 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>和敬くんの冒険ギルド</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>和敬くんの冒険ギルド</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React (UMD) -->
   <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- ReactDOM Client (createRootはこちら) -->
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom-client.production.min.js"></script>
+
+  <!-- Babel -->
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.321.0/dist/umd/lucide.min.js"></script>
-    <!-- Confetti -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+
+  <!-- Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+
+  <!-- Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
+
 <body class="bg-slate-950">
-    <div id="root"></div>
+  <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-        // アイコンの取得
-        const { Trophy, Sword, Shield, Star, CheckCircle2, Flame, User, Home, Settings, Play, Gift } = lucide;
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-        const INITIAL_TASKS = [
-            { id: 1, text: "あさごはんを たべる", xp: 50, completed: false, icon: "🍳" },
-            { id: 2, text: "はみがきを する", xp: 30, completed: false, icon: "🪥" },
-            { id: 3, text: "おきがえを する", xp: 40, completed: false, icon: "👕" },
-            { id: 4, text: "おもちゃを かたづける", xp: 60, completed: false, icon: "🧸" },
-            { id: 5, text: "しゅくだい/おべんきょう", xp: 100, completed: false, icon: "✏️" },
-            { id: 6, text: "おふろに はいる", xp: 50, completed: false, icon: "🛁" },
-        ];
+    // lucide UMD はグローバル lucide に生えます
+    const { Trophy, Sword, Shield, Star, CheckCircle2, Flame, User, Home, Settings, Play, Gift } = lucide;
 
-        const TreasureIcon = ({ size = 24, className = "" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                <path d="M22 7H2a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
-                <path d="M2 7V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2" />
-                <path d="M12 7v14" /><path d="M9 11h6" />
-            </svg>
+    const INITIAL_TASKS = [
+      { id: 1, text: "あさごはんを たべる", xp: 50, completed: false, icon: "🍳" },
+      { id: 2, text: "はみがきを する", xp: 30, completed: false, icon: "🪥" },
+      { id: 3, text: "おきがえを する", xp: 40, completed: false, icon: "👕" },
+      { id: 4, text: "おもちゃを かたづける", xp: 60, completed: false, icon: "🧸" },
+      { id: 5, text: "しゅくだい/おべんきょう", xp: 100, completed: false, icon: "✏️" },
+      { id: 6, text: "おふろに はいる", xp: 50, completed: false, icon: "🛁" },
+    ];
+
+    const TreasureIcon = ({ size = 24, className = "" }) => (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        <path d="M22 7H2a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+        <path d="M2 7V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2" />
+        <path d="M12 7v14" />
+        <path d="M9 11h6" />
+      </svg>
+    );
+
+    const RewardItem = ({ levelRequired, currentLevel, icon, label }) => {
+      const isUnlocked = currentLevel >= levelRequired;
+      return (
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className={`flex-shrink-0 w-20 h-20 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
+              isUnlocked
+                ? "bg-yellow-500/10 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                : "bg-slate-900 border-slate-800 text-slate-700"
+            }`}
+          >
+            {isUnlocked ? (
+              <span className="text-4xl">{icon}</span>
+            ) : (
+              <div className="flex flex-col items-center">
+                <Gift size={24} className="opacity-20 text-white" />
+                <span className="text-[10px] font-black mt-1">Lv.{levelRequired}</span>
+              </div>
+            )}
+          </div>
+
+          <span className={`text-[10px] font-bold ${isUnlocked ? "text-yellow-500" : "text-slate-600"}`}>
+            {isUnlocked ? label : "???"}
+          </span>
+        </div>
+      );
+    };
+
+    const App = () => {
+      const [tasks, setTasks] = useState(INITIAL_TASKS);
+      const [totalXp, setTotalXp] = useState(0);
+      const [level, setLevel] = useState(1);
+      const [showLevelUp, setShowLevelUp] = useState(false);
+
+      useEffect(() => {
+        const newLevel = Math.floor(totalXp / 200) + 1;
+        if (newLevel > level) {
+          setLevel(newLevel);
+          setShowLevelUp(true);
+          triggerConfetti();
+          setTimeout(() => setShowLevelUp(false), 3000);
+        }
+      }, [totalXp, level]);
+
+      const triggerConfetti = () => {
+        if (window.confetti) {
+          window.confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ["#FFD700", "#FFA500", "#FF4500", "#FFFFFF"],
+          });
+        }
+      };
+
+      const toggleTask = (id) => {
+        setTasks(
+          tasks.map((task) => {
+            if (task.id === id && !task.completed) {
+              setTotalXp((prev) => prev + task.xp);
+              triggerConfetti();
+              return { ...task, completed: true };
+            }
+            return task;
+          })
         );
+      };
 
-        const RewardItem = ({ levelRequired, currentLevel, icon, label }) => {
-            const isUnlocked = currentLevel >= levelRequired;
-            return (
-                <div className="flex flex-col items-center gap-2">
-                    <div className={`flex-shrink-0 w-20 h-20 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-                        isUnlocked ? 'bg-yellow-500/10 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'bg-slate-900 border-slate-800 text-slate-700'
-                    }`}>
-                        {isUnlocked ? (
-                            <span className="text-4xl">{icon}</span>
-                        ) : (
-                            <div className="flex flex-col items-center">
-                                <Gift size={24} className="opacity-20 text-white" />
-                                <span className="text-[10px] font-black mt-1">Lv.{levelRequired}</span>
-                            </div>
-                        )}
-                    </div>
-                    <span className={`text-[10px] font-bold ${isUnlocked ? 'text-yellow-500' : 'text-slate-600'}`}>
-                        {isUnlocked ? label : '???'}
+      const resetQuests = () => {
+        if (window.confirm("あしたの ぼうけんに そなえて、クエストを リセットする？")) {
+          setTasks(INITIAL_TASKS.map((t) => ({ ...t, completed: false })));
+        }
+      };
+
+      const xpInLevel = totalXp % 200;
+      const xpProgress = (xpInLevel / 200) * 100;
+
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 pb-28 md:p-8 flex justify-center items-start">
+          <div className="max-w-md w-full space-y-6">
+            {/* ステータス */}
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-6 shadow-2xl border-b-4 border-slate-700 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-white">
+                <Sword size={120} />
+              </div>
+
+              <div className="flex items-center space-x-4 mb-6 relative z-10">
+                <div className="w-20 h-20 bg-blue-600 rounded-2xl border-4 border-slate-700 flex items-center justify-center shadow-inner overflow-hidden transform -rotate-3">
+                  <img
+                    src="https://api.dicebear.com/7.x/adventurer/svg?seed=Wake&backgroundColor=b6e3f4"
+                    alt="Wake"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div>
+                  <h1 className="text-2xl font-black text-white">ゆうしゃ 和敬</h1>
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-400">
+                    <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">
+                      Lv. {level}
                     </span>
+                    <span>Adventurer</span>
+                  </div>
                 </div>
-            );
-        };
+              </div>
 
-        const App = () => {
-            const [tasks, setTasks] = useState(INITIAL_TASKS);
-            const [totalXp, setTotalXp] = useState(0);
-            const [level, setLevel] = useState(1);
-            const [showLevelUp, setShowLevelUp] = useState(false);
-
-            useEffect(() => {
-                const newLevel = Math.floor(totalXp / 200) + 1;
-                if (newLevel > level) {
-                    setLevel(newLevel);
-                    setShowLevelUp(true);
-                    triggerConfetti();
-                    setTimeout(() => setShowLevelUp(false), 3000);
-                }
-            }, [totalXp, level]);
-
-            const triggerConfetti = () => {
-                if (window.confetti) {
-                    window.confetti({
-                        particleCount: 150, spread: 70, origin: { y: 0.6 },
-                        colors: ['#FFD700', '#FFA500', '#FF4500', '#FFFFFF']
-                    });
-                }
-            };
-
-            const toggleTask = (id) => {
-                setTasks(tasks.map(task => {
-                    if (task.id === id && !task.completed) {
-                        setTotalXp(prev => prev + task.xp);
-                        triggerConfetti();
-                        return { ...task, completed: true };
-                    }
-                    return task;
-                }));
-            };
-
-            const resetQuests = () => {
-                if (window.confirm("あしたの ぼうけんに そなえて、クエストを リセットする？")) {
-                    setTasks(INITIAL_TASKS.map(t => ({ ...t, completed: false })));
-                }
-            };
-
-            const xpInLevel = totalXp % 200;
-            const xpProgress = (xpInLevel / 200) * 100;
-
-            return (
-                <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 pb-28 md:p-8 flex justify-center items-start">
-                    <div className="max-w-md w-full space-y-6">
-                        
-                        {/* ステータス */}
-                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-6 shadow-2xl border-b-4 border-slate-700 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-white">
-                                <Sword size={120} />
-                            </div>
-                            <div className="flex items-center space-x-4 mb-6 relative z-10">
-                                <div className="w-20 h-20 bg-blue-600 rounded-2xl border-4 border-slate-700 flex items-center justify-center shadow-inner overflow-hidden transform -rotate-3">
-                                    <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Wake&backgroundColor=b6e3f4" alt="Wake" className="w-full h-full object-cover" />
-                                </div>
-                                <div>
-                                    <h1 className="text-2xl font-black text-white">ゆうしゃ 和敬</h1>
-                                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-400">
-                                        <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">Lv. {level}</span>
-                                        <span>Adventurer</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="space-y-2 relative z-10">
-                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                    <span>Next Level</span>
-                                    <span className="text-yellow-500">{xpInLevel} / 200 XP</span>
-                                </div>
-                                <div className="h-5 bg-slate-950/50 rounded-full border border-slate-700 p-1">
-                                    <div className="h-full bg-gradient-to-r from-blue-500 via-yellow-400 to-orange-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(251,191,36,0.3)]" style={{ width: `${xpProgress}%` }}></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* クエストリスト */}
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-end px-2">
-                                <h2 className="text-2xl font-black text-white">今日のクエスト</h2>
-                                <div className="bg-slate-800/50 px-4 py-1.5 rounded-xl border border-slate-700 text-sm font-black">
-                                    {tasks.filter(t => t.completed).length} / {tasks.length}
-                                </div>
-                            </div>
-                            <div className="grid gap-4">
-                                {tasks.map((task) => (
-                                    <button key={task.id} onClick={() => toggleTask(task.id)} disabled={task.completed} className={`group flex items-center p-5 rounded-[1.5rem] border-b-4 transition-all duration-200 active:translate-y-1 active:border-b-0 ${task.completed ? 'bg-emerald-950/20 border-emerald-900/10 opacity-60' : 'bg-slate-800 border-slate-950'}`}>
-                                        <div className="text-4xl mr-5 w-16 h-16 flex items-center justify-center rounded-2xl bg-slate-700">{task.icon}</div>
-                                        <div className="flex-1 text-left">
-                                            <div className={`text-lg font-bold ${task.completed ? 'line-through text-slate-500' : 'text-slate-100'}`}>{task.text}</div>
-                                            <div className={`text-xs font-black mt-1 flex items-center gap-1 ${task.completed ? 'text-slate-600' : 'text-yellow-500'}`}><Star size={14} fill="currentColor" /> +{task.xp} XP</div>
-                                        </div>
-                                        {task.completed ? (
-                                            <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white"><CheckCircle2 size={24} strokeWidth={3} /></div>
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full border-4 border-slate-700"></div>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* 報酬 */}
-                        <div className="bg-indigo-900/20 rounded-[2rem] p-6 border border-indigo-500/20 relative overflow-hidden">
-                            <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-indigo-300"><Trophy size={20} className="text-yellow-500" /> クリア報酬</h2>
-                            <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-                                <RewardItem levelRequired={1} currentLevel={level} icon="🍦" label="アイス" />
-                                <RewardItem levelRequired={5} currentLevel={level} icon="🎮" label="ゲーム" />
-                                <RewardItem levelRequired={10} currentLevel={level} icon="🎁" label="ひみつ" />
-                            </div>
-                        </div>
-
-                        {/* 下部メニュー */}
-                        <div className="fixed bottom-6 left-4 right-4 max-w-md mx-auto z-40">
-        <div className="bg-slate-900/80 backdrop-blur-xl rounded-[2.5rem] p-4 border border-slate-700/50 flex justify-around">
-            <button className="p-4 bg-blue-600 rounded-2xl text-white"><Home size={28} /></button>
-            <button onClick={resetQuests} className="p-4 text-slate-500"><Play size={28} /></button>
-            <button className="p-4 text-slate-500"><Settings size={28} /></button>
-        </div>
-    </div>
-
-    {/* レベルアップ */}
-    {showLevelUp && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-slate-950/90 backdrop-blur-md">
-            <div className="text-center p-8 scale-in-center">
-                <div className="text-8xl mb-6">✨</div>
-                <h2 className="text-6xl font-black text-yellow-500 italic mb-4">LEVEL UP!</h2>
-                <div className="bg-white/10 px-6 py-3 rounded-2xl border border-white/20 inline-block text-2xl font-bold text-white">
-                   冒険ランクが上がった！
+              <div className="space-y-2 relative z-10">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span>Next Level</span>
+                  <span className="text-yellow-500">{xpInLevel} / 200 XP</span>
                 </div>
+
+                <div className="h-5 bg-slate-950/50 rounded-full border border-slate-700 p-1">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 via-yellow-400 to-orange-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+                    style={{ width: `${xpProgress}%` }}
+                  ></div>
+                </div>
+              </div>
             </div>
-        </div>
-    )}
-</div>
-);
-};
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
-</script>
+            {/* クエストリスト */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-end px-2">
+                <h2 className="text-2xl font-black text-white">今日のクエスト</h2>
+                <div className="bg-slate-800/50 px-4 py-1.5 rounded-xl border border-slate-700 text-sm font-black">
+                  {tasks.filter((t) => t.completed).length} / {tasks.length}
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                {tasks.map((task) => (
+                  <button
+                    key={task.id}
+                    onClick={() => toggleTask(task.id)}
+                    disabled={task.completed}
+                    className={`group flex items-center p-5 rounded-[1.5rem] border-b-4 transition-all duration-200 active:translate-y-1 active:border-b-0 ${
+                      task.completed
+                        ? "bg-emerald-950/20 border-emerald-900/10 opacity-60"
+                        : "bg-slate-800 border-slate-950"
+                    }`}
+                  >
+                    <div className="text-4xl mr-5 w-16 h-16 flex items-center justify-center rounded-2xl bg-slate-700">
+                      {task.icon}
+                    </div>
+
+                    <div className="flex-1 text-left">
+                      <div className={`text-lg font-bold ${task.completed ? "line-through text-slate-500" : "text-slate-100"}`}>
+                        {task.text}
+                      </div>
+                      <div
+                        className={`text-xs font-black mt-1 flex items-center gap-1 ${
+                          task.completed ? "text-slate-600" : "text-yellow-500"
+                        }`}
+                      >
+                        <Star size={14} fill="currentColor" /> +{task.xp} XP
+                      </div>
+                    </div>
+
+                    {task.completed ? (
+                      <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+                        <CheckCircle2 size={24} strokeWidth={3} />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full border-4 border-slate-700"></div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 報酬 */}
+            <div className="bg-indigo-900/20 rounded-[2rem] p-6 border border-indigo-500/20 relative overflow-hidden">
+              <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-indigo-300">
+                <Trophy size={20} className="text-yellow-500" /> クリア報酬
+              </h2>
+
+              <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+                <RewardItem levelRequired={1} currentLevel={level} icon="🍦" label="アイス" />
+                <RewardItem levelRequired={5} currentLevel={level} icon="🎮" label="ゲーム" />
+                <RewardItem levelRequired={10} currentLevel={level} icon="🎁" label="ひみつ" />
+              </div>
+            </div>
+
+            {/* 下部メニュー */}
+            <div className="fixed bottom-6 left-4 right-4 max-w-md mx-auto z-40">
+              <div className="bg-slate-900/80 backdrop-blur-xl rounded-[2.5rem] p-4 border border-slate-700/50 flex justify-around">
+                <button className="p-4 bg-blue-600 rounded-2xl text-white">
+                  <Home size={28} />
+                </button>
+                <button onClick={resetQuests} className="p-4 text-slate-500">
+                  <Play size={28} />
+                </button>
+                <button className="p-4 text-slate-500">
+                  <Settings size={28} />
+                </button>
+              </div>
+            </div>
+
+            {/* レベルアップ */}
+            {showLevelUp && (
+              <div className="fixed inset-0 flex items-center justify-center z-50 bg-slate-950/90 backdrop-blur-md">
+                <div className="text-center p-8 scale-in-center">
+                  <div className="text-8xl mb-6">✨</div>
+                  <h2 className="text-6xl font-black text-yellow-500 italic mb-4">LEVEL UP!</h2>
+                  <div className="bg-white/10 px-6 py-3 rounded-2xl border border-white/20 inline-block text-2xl font-bold text-white">
+                    冒険ランクが上がった！
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOMClient.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
 </body>
 </html>
