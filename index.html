@@ -18,10 +18,6 @@
   <!-- Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-  <!-- favicon（404を消したいなら assets/favicon.png を置いて有効化）
-  <link rel="icon" href="./assets/favicon.png" type="image/png" />
-  -->
-
   <style>
     body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -35,7 +31,7 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
-    // React管理のシンプルSVGアイコン（Lucide互換っぽい線画）
+    // 依存を減らす：React管理のSVGアイコン
     const Icon = ({ name, size = 24, className = "", strokeWidth = 2 }) => {
       const common = {
         width: size,
@@ -67,17 +63,6 @@
               <path d="M12 2l2.9 6.1 6.7.6-5 4.3 1.5 6.5L12 16.9 5.9 19.5 7.4 13 2.4 8.7l6.7-.6L12 2z" />
             </svg>
           );
-        case "trophy":
-          return (
-            <svg {...common}>
-              <path d="M8 4h8v3a4 4 0 0 1-8 0V4z" />
-              <path d="M6 4H4v2a4 4 0 0 0 4 4" />
-              <path d="M18 4h2v2a4 4 0 0 1-4 4" />
-              <path d="M12 11v4" />
-              <path d="M8 21h8" />
-              <path d="M10 15h4v6h-4z" />
-            </svg>
-          );
         case "home":
           return (
             <svg {...common}>
@@ -98,20 +83,18 @@
               <path d="M19.4 15a7.8 7.8 0 0 0 .1-2l2-1.2-2-3.5-2.3.7a7.2 7.2 0 0 0-1.7-1l-.3-2.4H9.8L9.5 8a7.2 7.2 0 0 0-1.7 1L5.5 8.3l-2 3.5 2 1.2a7.8 7.8 0 0 0 .1 2l-2 1.2 2 3.5 2.3-.7a7.2 7.2 0 0 0 1.7 1l.3 2.4h4.4l.3-2.4a7.2 7.2 0 0 0 1.7-1l2.3.7 2-3.5-2-1.2z" />
             </svg>
           );
-        case "gift":
-          return (
-            <svg {...common}>
-              <path d="M20 12v10H4V12" />
-              <path d="M2 7h20v5H2V7z" />
-              <path d="M12 7v15" />
-              <path d="M12 7c-1.8 0-3-1-3-2.3C9 3.3 10.2 2 12 4c1.8-2 3-0.7 3 0.7C15 6 13.8 7 12 7z" />
-            </svg>
-          );
-        case "check-circle-2":
+        case "check-circle":
           return (
             <svg {...common}>
               <path d="M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z" />
               <path d="M7 12l3 3 7-7" />
+            </svg>
+          );
+        case "crown":
+          return (
+            <svg {...common}>
+              <path d="M4 8l4 4 4-6 4 6 4-4v10H4V8z" />
+              <path d="M4 18h16" />
             </svg>
           );
         default:
@@ -128,31 +111,12 @@
       { id: 6, text: "おふろに はいる", xp: 50, completed: false, icon: "🛁" },
     ];
 
-    const RewardItem = ({ levelRequired, currentLevel, icon, label }) => {
-      const isUnlocked = currentLevel >= levelRequired;
-      return (
-        <div className="flex flex-col items-center gap-2">
-          <div
-            className={`flex-shrink-0 w-20 h-20 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
-              isUnlocked
-                ? "bg-yellow-500/10 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-                : "bg-slate-900 border-slate-800 text-slate-700"
-            }`}
-          >
-            {isUnlocked ? (
-              <span className="text-4xl">{icon}</span>
-            ) : (
-              <div className="flex flex-col items-center">
-                <Icon name="gift" size={24} className="opacity-20 text-white" />
-                <span className="text-[10px] font-black mt-1">Lv.{levelRequired}</span>
-              </div>
-            )}
-          </div>
-          <span className={`text-[10px] font-bold ${isUnlocked ? "text-yellow-500" : "text-slate-600"}`}>
-            {isUnlocked ? label : "???"}
-          </span>
-        </div>
-      );
+    // レベルごとの「成長」表現（称号・枠色・演出）
+    const getGrowthProfile = (level) => {
+      if (level >= 10) return { title: "でんせつの ゆうしゃ", accent: "from-fuchsia-500 via-yellow-300 to-emerald-400", frame: "border-fuchsia-400/40", glow: "shadow-[0_0_30px_rgba(217,70,239,0.18)]" };
+      if (level >= 7)  return { title: "えいゆう",           accent: "from-indigo-500 via-sky-300 to-emerald-400",   frame: "border-indigo-400/35", glow: "shadow-[0_0_26px_rgba(99,102,241,0.16)]" };
+      if (level >= 4)  return { title: "つよい ぼうけんしゃ", accent: "from-blue-500 via-yellow-300 to-orange-400",   frame: "border-blue-400/30",  glow: "shadow-[0_0_22px_rgba(59,130,246,0.15)]" };
+      return            { title: "ぼうけんしゃ",              accent: "from-slate-500 via-slate-300 to-slate-200",    frame: "border-slate-400/20", glow: "shadow-[0_0_18px_rgba(148,163,184,0.10)]" };
     };
 
     const App = () => {
@@ -162,26 +126,39 @@
       const [showLevelUp, setShowLevelUp] = useState(false);
 
       const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
+      const allComplete = completedCount === tasks.length;
+
+      // 「3レベルごとに豪華」判定
+      const isMilestone = level % 3 === 0;
+
+      const profile = useMemo(() => getGrowthProfile(level), [level]);
+
+      // 毎レベルで見た目が変わる（成長演出の主軸）
+      // seed に level を入れて顔つき/装備などが変わるようにする
+      const avatarUrl = useMemo(() => {
+        const seed = `Wake-Lv${level}`;
+        // Dicebear adventurer（SVG）: 背景色なども固定しつつ seed で変化
+        return `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4`;
+      }, [level]);
 
       useEffect(() => {
         const newLevel = Math.floor(totalXp / 200) + 1;
         if (newLevel > level) {
           setLevel(newLevel);
           setShowLevelUp(true);
-          triggerConfetti();
-          setTimeout(() => setShowLevelUp(false), 3000);
+          triggerConfetti(true);
+          setTimeout(() => setShowLevelUp(false), 2500);
         }
       }, [totalXp, level]);
 
-      const triggerConfetti = () => {
-        if (window.confetti) {
-          window.confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ["#FFD700", "#FFA500", "#FF4500", "#FFFFFF"],
-          });
-        }
+      const triggerConfetti = (big = false) => {
+        if (!window.confetti) return;
+        window.confetti({
+          particleCount: big ? 220 : 120,
+          spread: big ? 90 : 70,
+          origin: { y: 0.65 },
+          colors: ["#FFD700", "#60A5FA", "#F97316", "#FFFFFF"]
+        });
       };
 
       const toggleTask = (id) => {
@@ -189,7 +166,7 @@
           prev.map(task => {
             if (task.id === id && !task.completed) {
               setTotalXp(x => x + task.xp);
-              triggerConfetti();
+              triggerConfetti(false);
               return { ...task, completed: true };
             }
             return task;
@@ -206,48 +183,80 @@
       const xpInLevel = totalXp % 200;
       const xpProgress = (xpInLevel / 200) * 100;
 
+      // Lv欄を見やすく：次のレベルまで
+      const xpToNext = 200 - xpInLevel;
+
       return (
         <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 pb-28 md:p-8 flex justify-center items-start">
           <div className="max-w-md w-full space-y-6">
 
-            {/* ステータス */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-6 shadow-2xl border-b-4 border-slate-700 relative overflow-hidden">
+            {/* ステータス（見やすく強化） */}
+            <div className={`bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-6 shadow-2xl border ${profile.frame} relative overflow-hidden ${profile.glow}`}>
               <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-white">
                 <Icon name="sword" size={120} />
               </div>
 
-              <div className="flex items-center space-x-4 mb-6 relative z-10">
-                <div className="w-20 h-20 bg-blue-600 rounded-2xl border-4 border-slate-700 flex items-center justify-center shadow-inner overflow-hidden transform -rotate-3">
-                  <img
-                    src="https://api.dicebear.com/7.x/adventurer/svg?seed=Wake&backgroundColor=b6e3f4"
-                    alt="Wake"
-                    className="w-full h-full object-cover"
-                  />
+              <div className="flex items-center gap-4 mb-5 relative z-10">
+                <div
+                  className={`w-20 h-20 rounded-2xl border-4 flex items-center justify-center overflow-hidden transform -rotate-3
+                    ${isMilestone ? "border-yellow-400/70 shadow-[0_0_22px_rgba(250,204,21,0.22)]" : "border-slate-700 shadow-inner"}`}
+                >
+                  <img src={avatarUrl} alt={`Wake Lv${level}`} className="w-full h-full object-cover" />
                 </div>
 
-                <div>
-                  <h1 className="text-2xl font-black text-white">ゆうしゃ 和敬</h1>
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-400">
-                    <span className="bg-blue-500/20 text-blue-400 px-2 py-0_ATTACHMENT py-0.5 rounded border border-blue-500/30">
-                      Lv. {level}
-                    </span>
-                    <span>ADVENTURER</span>
+                <div className="min-w-0">
+                  <h1 className="text-2xl font-black text-white leading-tight">ゆうしゃ 和敬</h1>
+
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {/* Lv表示を大型化＋3レベル毎に豪華 */}
+                    <div
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-black tracking-wide
+                        ${isMilestone
+                          ? "bg-gradient-to-r from-yellow-500/25 to-orange-500/15 border-yellow-400/50 text-yellow-200 shadow-[0_0_18px_rgba(250,204,21,0.18)]"
+                          : "bg-slate-950/40 border-slate-700 text-slate-100"
+                        }`}
+                    >
+                      {isMilestone && <Icon name="crown" size={16} className="text-yellow-300" />}
+                      <span className="tabular-nums">Lv. {level}</span>
+                    </div>
+
+                    {/* 成長称号 */}
+                    <div className="text-xs font-black uppercase text-slate-300/90 truncate">
+                      {profile.title}
+                    </div>
                   </div>
                 </div>
               </div>
 
+              {/* XPバー（見やすく：現状/残りを明確化） */}
               <div className="space-y-2 relative z-10">
-                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  <span>Next Level</span>
-                  <span className="text-yellow-500">{xpInLevel} / 200 XP</span>
+                <div className="flex justify-between items-end">
+                  <div className="text-[11px] font-black uppercase tracking-widest text-slate-300/80">
+                    Next Level
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[12px] font-black text-yellow-300 tabular-nums">
+                      {xpInLevel} / 200 XP
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-400 tabular-nums">
+                      あと {xpToNext} XP
+                    </div>
+                  </div>
                 </div>
 
-                <div className="h-5 bg-slate-950/50 rounded-full border border-slate-700 p-1">
+                <div className="h-5 bg-slate-950/55 rounded-full border border-slate-700 p-1">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 via-yellow-400 to-orange-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+                    className={`h-full rounded-full transition-all duration-700 ${isMilestone ? "shadow-[0_0_18px_rgba(250,204,21,0.22)]" : "shadow-[0_0_15px_rgba(59,130,246,0.18)]"} bg-gradient-to-r ${profile.accent}`}
                     style={{ width: `${xpProgress}%` }}
-                  ></div>
+                  />
                 </div>
+
+                {/* 全完了時の小さなメッセージ */}
+                {allComplete && (
+                  <div className="mt-2 text-xs font-black text-emerald-300">
+                    今日のクエスト、ぜんぶクリア！
+                  </div>
+                )}
               </div>
             </div>
 
@@ -255,7 +264,7 @@
             <div className="space-y-4">
               <div className="flex justify-between items-end px-2">
                 <h2 className="text-2xl font-black text-white">今日のクエスト</h2>
-                <div className="bg-slate-800/50 px-4 py-1.5 rounded-xl border border-slate-700 text-sm font-black">
+                <div className="bg-slate-800/50 px-4 py-1.5 rounded-xl border border-slate-700 text-sm font-black tabular-nums">
                   {completedCount} / {tasks.length}
                 </div>
               </div>
@@ -268,7 +277,7 @@
                     disabled={task.completed}
                     className={`group flex items-center p-5 rounded-[1.5rem] border-b-4 transition-all duration-200 active:translate-y-1 active:border-b-0 ${
                       task.completed
-                        ? "bg-emerald-950/20 border-emerald-900/10 opacity-60"
+                        ? "bg-emerald-950/20 border-emerald-900/10 opacity-70"
                         : "bg-slate-800 border-slate-950"
                     }`}
                   >
@@ -276,22 +285,23 @@
                       {task.icon}
                     </div>
 
-                    <div className="flex-1 text-left">
-                      <div className={`text-lg font-bold ${task.completed ? "line-through text-slate-500" : "text-slate-100"}`}>
+                    <div className="flex-1 text-left min-w-0">
+                      <div className={`text-lg font-bold truncate ${task.completed ? "line-through text-slate-500" : "text-slate-100"}`}>
                         {task.text}
                       </div>
                       <div
                         className={`text-xs font-black mt-1 flex items-center gap-1 ${
-                          task.completed ? "text-slate-600" : "text-yellow-500"
+                          task.completed ? "text-slate-600" : "text-yellow-400"
                         }`}
                       >
-                        <Icon name="star" size={14} className="inline-block" /> +{task.xp} XP
+                        <Icon name="star" size={14} className="inline-block" />
+                        <span className="tabular-nums">+{task.xp} XP</span>
                       </div>
                     </div>
 
                     {task.completed ? (
                       <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white">
-                        <Icon name="check-circle-2" size={24} className="text-white" strokeWidth={3} />
+                        <Icon name="check-circle" size={24} className="text-white" strokeWidth={3} />
                       </div>
                     ) : (
                       <div className="w-10 h-10 rounded-full border-4 border-slate-700"></div>
@@ -301,18 +311,7 @@
               </div>
             </div>
 
-            {/* 報酬 */}
-            <div className="bg-indigo-900/20 rounded-[2rem] p-6 border border-indigo-500/20 relative overflow-hidden">
-              <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-indigo-300">
-                <Icon name="trophy" size={20} className="text-yellow-500" /> クリア報酬
-              </h2>
-
-              <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-                <RewardItem levelRequired={1} currentLevel={level} icon="🍦" label="アイス" />
-                <RewardItem levelRequired={5} currentLevel={level} icon="🎮" label="ゲーム" />
-                <RewardItem levelRequired={10} currentLevel={level} icon="🎁" label="ひみつ" />
-              </div>
-            </div>
+            {/* クリア報酬：削除（ご要望対応） */}
 
             {/* 下部メニュー */}
             <div className="fixed bottom-6 left-4 right-4 max-w-md mx-auto z-40">
@@ -329,14 +328,33 @@
               </div>
             </div>
 
-            {/* レベルアップ */}
+            {/* レベルアップ（演出：成長が分かるように表示） */}
             {showLevelUp && (
               <div className="fixed inset-0 flex items-center justify-center z-50 bg-slate-950/90 backdrop-blur-md">
                 <div className="text-center p-8">
-                  <div className="text-8xl mb-6">✨</div>
-                  <h2 className="text-6xl font-black text-yellow-500 italic mb-4">LEVEL UP!</h2>
-                  <div className="bg-white/10 px-6 py-3 rounded-2xl border border-white/20 inline-block text-2xl font-bold text-white">
-                    冒険ランクが上がった！
+                  <div className="text-7xl mb-5">✨</div>
+
+                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border ${
+                    isMilestone
+                      ? "border-yellow-400/50 bg-yellow-500/10 text-yellow-200 shadow-[0_0_20px_rgba(250,204,21,0.18)]"
+                      : "border-white/20 bg-white/10 text-white"
+                  }`}>
+                    {isMilestone && <Icon name="crown" size={18} className="text-yellow-300" />}
+                    <span className="text-2xl font-black tabular-nums">Lv. {level}</span>
+                  </div>
+
+                  <h2 className="text-5xl font-black text-yellow-400 italic mt-4 mb-3">LEVEL UP!</h2>
+
+                  <div className="text-base font-black text-slate-200">
+                    {profile.title} に しんかした！
+                  </div>
+
+                  <div className="mt-4 inline-flex items-center gap-3 px-5 py-3 rounded-2xl border border-white/15 bg-white/5">
+                    <img src={avatarUrl} alt={`Wake Lv${level}`} className="w-14 h-14 rounded-xl border border-white/20" />
+                    <div className="text-left">
+                      <div className="text-xs font-black text-slate-400">キャラクターが成長！</div>
+                      <div className="text-sm font-black text-white">見た目がレベルで変わります</div>
+                    </div>
                   </div>
                 </div>
               </div>
